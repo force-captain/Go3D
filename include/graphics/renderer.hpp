@@ -9,6 +9,7 @@ class Board;
 class Tile;
 class Object3D;
 class Object2D;
+class Camera;
 class Scene;
 
 class Renderer {
@@ -25,7 +26,7 @@ class Renderer {
         void update();
         static void onResize(GLFWwindow* win, int w, int h);
 
-        void renderObject(const Object3D& obj, const glm::mat4& view, const glm::mat4& proj);
+        void renderObject(const Object3D& obj, const Camera& cam);
         void renderObject(const Object2D& obj);
 
     public:

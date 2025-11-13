@@ -1,10 +1,13 @@
 #include "graphics/renderer.hpp"
 #include "graphics/objects/object3d.hpp"
 #include "graphics/objects/object2d.hpp"
-#include "graphics/objects/shader.hpp"
 #include "graphics/objects/mesh.hpp"
+#include "graphics/camera.hpp"
+#include "graphics/scene.hpp"
+#include "graphics/objects/shader.hpp"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_double4x4.hpp>
 #include <iostream>
 
@@ -83,10 +86,16 @@ void Renderer::cleanup() {
 // Drawing
 
 void Renderer::renderObject(const Object2D& obj) {
-
+    glm::mat4 projection = glm::ortho(0.0f, float(width), 0.0f, float(height), -1.0f, 1.0f);
+    
+    auto shader = obj.getMaterial().shader;
+    if (!shader) return;
 }
 
-void Renderer::renderObject(const Object3D& obj, const glm::mat4& view, const glm::mat4& proj) {
+void Renderer::renderObject(const Object3D& obj, const Camera& cam) {
+    glm::mat4 view = cam.getViewMatrix();
+    glm::mat4 proj = cam.getProjectionMatrix();
+
     auto shader = obj.getMaterial().shader;
     if (!shader) return;
 
@@ -109,4 +118,16 @@ void Renderer::renderObject(const Object3D& obj, const glm::mat4& view, const gl
         glDrawArrays(GL_TRIANGLES, 0, obj.getMesh()->vertexCount());
 
     glBindVertexArray(0);
+}
+
+
+void Renderer::renderScene(const Scene& scene) {
+    for (const auto& a: scene.getObjects()) {
+        if (scene.is3DScene()) {
+            
+
+        } else {
+
+        }
+    }
 }

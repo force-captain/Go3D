@@ -1,28 +1,37 @@
+#pragma once
+
 #include <cstdint>
 #include <glm/fwd.hpp>
 #include <unordered_map>
 #include <vector>
 #include <memory>
 
-class Object2D;
-class Object3D;
+class Object;
 class Camera;
 class Light;
 
 class Scene {
     private:
-        std::unordered_map<uint64_t, std::unique_ptr<Object2D>> objects2D;
-        std::unordered_map<uint64_t, std::unique_ptr<Object3D>> objects3D;
+        std::unordered_map<uint64_t, std::unique_ptr<Object>> objects;
         std::unique_ptr<Camera> camera;
         std::vector<std::unique_ptr<Light>> lights;
+        uint64_t nextID = 1;
+        bool is3D;
+
     public:
-        Object2D& addObject(std::unique_ptr<Object2D> o2d);
-        Object3D& addObject(std::unique_ptr<Object3D> o3d);
+        Scene(bool is3D) : is3D(is3D) {}
+        ~Scene();
 
-        void removeObject(Object2D& o2d);
-        void removeObject(Object3D& o3d);
+        uint64_t addObject(std::unique_ptr<Object> obj);
 
-        void setCamera(Camera& cam);
-        void translateCamera(glm::vec3 pos);
+        bool removeObject(uint64_t id);
+
+        void setCamera(std::unique_ptr<Camera>);
         void pointCamera(glm::vec3 target);
+        void rotateCamera(float dYaw, float dPitch);
+
+        bool is3DScene() const { return is3D; }
+
+        Object* getObject(uint64_t id);
+        const std::unordered_map<uint64_t, std::unique_ptr<Object>>& getObjects() const { return objects; }
 };

@@ -2,6 +2,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <string>
+#include <memory>
 
 class Shader {
     private:
@@ -23,4 +24,11 @@ class Shader {
         void setMat4(const std::string& name, const glm::mat4& value) const;
 
         GLuint getProgramID() const { return programID; }
+};
+
+
+struct Material {
+    glm::vec3 colour = glm::vec3(1.0f);
+    GLuint textureID = 0;
+    std::shared_ptr<Shader> shader;
 };
