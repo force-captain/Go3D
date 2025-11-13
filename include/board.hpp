@@ -4,7 +4,7 @@
 #include <memory>
 #include <unordered_set>
 #include <vector>
-#include "types.h"
+#include "types.hpp"
 
 class Group;
 class Tile;

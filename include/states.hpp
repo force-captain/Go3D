@@ -1,7 +1,7 @@
 #pragma once
 
 #include <cstdint>
-#include "types.h"
+#include "types.hpp"
 
 class Board;
 

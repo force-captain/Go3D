@@ -4,7 +4,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <utility>
-#include "types.h"
 
 struct GLFWwindow;
 class Board;
@@ -22,7 +21,7 @@ class Renderer {
         glm::mat4 view;
         glm::mat4 model;
 
-        Vector3 camEye, camCenter, camUp;
+        glm::vec3 camEye, camCenter, camUp;
 
         GLuint shaderProgram;
         GLuint boardVAO, boardVBO;
@@ -45,7 +44,7 @@ class Renderer {
 
         GLFWwindow* getWindow() const;
 
-        void setCamera(Vector3 eye, Vector3 center, Vector3 up);
+        void setCamera(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
 
         // Drawing
         /*

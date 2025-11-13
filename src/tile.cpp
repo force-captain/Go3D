@@ -1,6 +1,6 @@
-#include "tile.h"
-#include "group.h"
-#include "board.h"
+#include "tile.hpp"
+#include "group.hpp"
+#include "board.hpp"
 #include <unordered_set>
 
 Tile::Tile(Board* b, int x, int y) : x(x), y(y) {

@@ -1,4 +1,4 @@
-#include "group.h"
+#include "group.hpp"
 
 Group::Group(Tile& init, Colour colour) 
     : colour(colour), captured(false) {

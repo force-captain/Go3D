@@ -1,8 +1,8 @@
-#include "states.h"
-#include "tile.h"
-#include "types.h"
-#include "board.h"
-#include "group.h"
+#include "states.hpp"
+#include "tile.hpp"
+#include "types.hpp"
+#include "board.hpp"
+#include "group.hpp"
 #include <vector>
 
 static uint64_t state = 88172345361325652ULL;

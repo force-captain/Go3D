@@ -1,7 +1,7 @@
 #pragma once
 
-#include "tile.h"
-#include "types.h"
+#include "tile.hpp"
+#include "types.hpp"
 #include <unordered_set>
 
 class Group {

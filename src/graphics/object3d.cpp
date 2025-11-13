@@ -1,5 +1,5 @@
-#include "graphics/object3d.h"
-#include "graphics/mesh.h"
+#include "graphics/object3d.hpp"
+#include "graphics/mesh.hpp"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 

@@ -1,14 +1,13 @@
-#include "graphics/renderer.h"
+#include "graphics/renderer.hpp"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_double4x4.hpp>
 #include <iostream>
-#include "types.h"
 
 Renderer::Renderer(int w, int h, const char* t) : width(w), height(h), title(t), window(nullptr) {
-    camEye = Vector3(w / 2.0f, (float)h, w / 2.0f);
-    camCenter = Vector3(w / 2.0f, 0.0f, w / 2.0f);
-    camUp = Vector3(0.0f, 1.0f, 0.0f );
+    camEye = {w / 2.0f, (float)h, w / 2.0f};
+    camCenter = {w / 2.0f, 0.0f, w / 2.0f};
+    camUp = {0.0f, 1.0f, 0.0f };
 }
 
 void Renderer::onResize(GLFWwindow* win, int w, int h) {

@@ -1,4 +1,4 @@
-#include "graphics/renderer.h"
+#include "graphics/renderer.hpp"
 #include <GLFW/glfw3.h>
 
 int main() {

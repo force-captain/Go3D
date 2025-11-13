@@ -1,8 +1,8 @@
-#include "board.h"
-#include "types.h"
-#include "group.h"
-#include "tile.h"
-#include "states.h"
+#include "board.hpp"
+#include "types.hpp"
+#include "group.hpp"
+#include "tile.hpp"
+#include "states.hpp"
 #include <algorithm>
 
 Board::Board(int size)
