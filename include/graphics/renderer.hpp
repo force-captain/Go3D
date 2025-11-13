@@ -3,12 +3,13 @@
 #include <glm/mat4x4.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
-#include <utility>
 
 struct GLFWwindow;
 class Board;
 class Tile;
 class Object3D;
+class Object2D;
+class Scene;
 
 class Renderer {
     private:
@@ -17,44 +18,29 @@ class Renderer {
 
         GLFWwindow* window;
 
-        glm::mat4 projection;
-        glm::mat4 view;
-        glm::mat4 model;
+        double lastFrameTime = 0.0;
+        double deltaTime = 0.0;
+        void updateDeltaTime();
 
-        glm::vec3 camEye, camCenter, camUp;
-
-        GLuint shaderProgram;
-        GLuint boardVAO, boardVBO;
-        GLuint stoneVAO, stoneVBO;
-
-        void setupLighting();
+        void update();
         static void onResize(GLFWwindow* win, int w, int h);
 
-        bool loadShaders(const char* vertPath, const char* fragPath);
-        void setMVP(const glm::mat4& model);
+        void renderObject(const Object3D& obj, const glm::mat4& view, const glm::mat4& proj);
+        void renderObject(const Object2D& obj);
+
     public:
-        Renderer(int width, int height, const char* title);
+        Renderer(int width, int height, const char* title)
+            : width(width), height(height), title(title), window(nullptr) {}
+        Renderer(const Renderer&) = delete;
+        Renderer& operator=(const Renderer&) = delete;
+        ~Renderer() { cleanup(); }
 
         bool init();
-
-        void clear();
-        void swapBuffers();
+        void clear(const glm::vec4& colour = glm::vec4(0,0,0,1));
         bool shouldClose() const;
         void cleanup();
 
         GLFWwindow* getWindow() const;
 
-        void setCamera(glm::vec3 eye, glm::vec3 center, glm::vec3 up);
-
-        // Drawing
-        /*
-        void drawBoard(const Board& board);
-        void drawPieces(const Board& board);
-        void drawSelection(const Tile& t, Colour c);
-        */
-        void drawObject(const Object3D& obj);
-
-        std::pair<int, int> screenToBoard(double x, double y);
-
-        void updateProjection(float fov, float aspect, float nearPlane, float farPlane);
+        void renderScene(const Scene& scene);
 };

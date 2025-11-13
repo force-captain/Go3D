@@ -1,12 +1,15 @@
-#include "graphics/object3d.hpp"
-#include "graphics/mesh.hpp"
-#include <glm/ext/matrix_transform.hpp>
+#include "graphics/objects/object3d.hpp"
+#include "graphics/objects/mesh.hpp"
+#include <glm/detail/qualifier.hpp>
 #include <glm/glm.hpp>
+#include <glm/gtc/quaternion.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 Object3D::Object3D(Mesh* meshPtr, glm::vec3 pos) {
 
 }
 
+/*
 void Object3D::draw(GLuint shaderProgram, glm::mat4& proj, glm::mat4& view) const {
     glUseProgram(shaderProgram);
 
@@ -23,7 +26,7 @@ void Object3D::draw(GLuint shaderProgram, glm::mat4& proj, glm::mat4& view) cons
 
     mesh->draw();
 }
-
+*/
 glm::mat4 Object3D::getModelMatrix() const {
     glm::mat4 model = glm::mat4(1.0f);
 
@@ -31,9 +34,8 @@ glm::mat4 Object3D::getModelMatrix() const {
     model = glm::translate(model, position);
 
     // Rotate
-    model = glm::rotate(model, rotation.x, glm::vec3(1, 0, 0));
-    model = glm::rotate(model, rotation.y, glm::vec3(0, 1, 0));
-    model = glm::rotate(model, rotation.z, glm::vec3(0, 0, 1));
+    glm::quat q = glm::quat(rotation);
+    model *= glm::mat4_cast(q);
 
     // Scale
     model = glm::scale(model, scale);

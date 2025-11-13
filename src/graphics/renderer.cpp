@@ -1,22 +1,19 @@
 #include "graphics/renderer.hpp"
+#include "graphics/objects/object3d.hpp"
+#include "graphics/objects/object2d.hpp"
+#include "graphics/objects/shader.hpp"
+#include "graphics/objects/mesh.hpp"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_double4x4.hpp>
 #include <iostream>
 
-Renderer::Renderer(int w, int h, const char* t) : width(w), height(h), title(t), window(nullptr) {
-    camEye = {w / 2.0f, (float)h, w / 2.0f};
-    camCenter = {w / 2.0f, 0.0f, w / 2.0f};
-    camUp = {0.0f, 1.0f, 0.0f };
-}
 
 void Renderer::onResize(GLFWwindow* win, int w, int h) {
+    Renderer* ren = static_cast<Renderer*>(glfwGetWindowUserPointer(win));
+    ren->width = w;
+    ren->height = h;
     glViewport(0, 0, w, h);
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, w / (float)h, 0.1, 100.0);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
 }
 
 bool Renderer::init() {
@@ -25,10 +22,7 @@ bool Renderer::init() {
         return false;
     }
 
-
-    printf("Using GLFW backend: %d\n", glfwGetPlatform());
     // OpenGL 3.3 Core
-    glfwWindowHint(GLFW_FLOATING, GLFW_TRUE);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -40,7 +34,10 @@ bool Renderer::init() {
         return false;
     }
 
+    glfwSetWindowUserPointer(window, this);
+
     glfwMakeContextCurrent(window);
+    glfwSetFramebufferSizeCallback(window, onResize);
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
@@ -50,60 +47,29 @@ bool Renderer::init() {
 
     // Depth testing
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glEnable(GL_CULL_FACE);
 
-    // Lighting
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    setupLighting();
-
-    glShadeModel(GL_SMOOTH);
-
-    // init viewport
-    int fbWidth, fbHeight;
-    glfwGetFramebufferSize(window, &fbWidth, &fbHeight);
-    glViewport(0, 0, fbWidth, fbHeight);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluPerspective(45.0, fbWidth / (float)fbHeight, 0.1, 100.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(camEye.x, camEye.y, camEye.z,
-              camCenter.x, camCenter.y, camCenter.z,
-              camUp.x, camUp.y, camUp.z);
-    
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow* win, int w, int h) {
-            onResize(win, w, h);
-    });
+    glViewport(0, 0, width, height);
 
     return true;
 }
 
-void Renderer::setupLighting() {
-    GLfloat lightPos[] = { 10.0f, 15.0f, 10.0f, 1.0f };
-    GLfloat ambient [] = { 0.3f , 0.3f , 0.3f , 1.0f };
-    GLfloat diffuse [] = { 0.8f , 0.8f , 0.8f , 1.0f };
-    GLfloat specular[] = { 0.9f , 0.9f , 0.9f , 1.0f };
-
-    glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-    glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
-    glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
-    glLightfv(GL_LIGHT0, GL_SPECULAR, specular);
+void Renderer::clear(const glm::vec4& colour) {
+    glClearColor(colour.r, colour.g, colour.b, colour.a);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
-void Renderer::clear() {
-    glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-}
-
 
 bool Renderer::shouldClose() const {
     return glfwWindowShouldClose(window);
 }
 
-void Renderer::swapBuffers() {
+void Renderer::updateDeltaTime() {
+    double currentTime = glfwGetTime();
+    deltaTime = currentTime - lastFrameTime;
+    lastFrameTime = currentTime;
+}
+
+void Renderer::update() {
     glfwSwapBuffers(window);
     glfwPollEvents();
 }
@@ -111,4 +77,36 @@ void Renderer::swapBuffers() {
 void Renderer::cleanup() {
     glfwDestroyWindow(window);
     glfwTerminate();
+    window = nullptr;
+}
+
+// Drawing
+
+void Renderer::renderObject(const Object2D& obj) {
+
+}
+
+void Renderer::renderObject(const Object3D& obj, const glm::mat4& view, const glm::mat4& proj) {
+    auto shader = obj.getMaterial().shader;
+    if (!shader) return;
+
+    shader->use();
+    shader->setMat4("model", obj.getModelMatrix());
+    shader->setMat4("view", view);
+    shader->setMat4("projection", proj);
+    shader->setVec3("objectColour", obj.getMaterial().colour);
+
+    if (obj.getMaterial().textureID != 0) {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, obj.getMaterial().textureID);
+        shader->setInt("diffuseTexture", 0);
+    }
+
+    glBindVertexArray(obj.getMesh()->getVAO());
+    if (obj.getMesh()->getEBO() != 0) 
+        glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
+    else 
+        glDrawArrays(GL_TRIANGLES, 0, obj.getMesh()->vertexCount());
+
+    glBindVertexArray(0);
 }
