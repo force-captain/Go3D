@@ -30,4 +30,15 @@ else()
     message(FATAL_ERROR "GLFW not found")
 endif()
 
-target_link_libraries(go3d PRIVATE GL dl m)
+# Link libraries
+cmake_policy(SET CMP0072 NEW)
+find_package(OpenGL REQUIRED)
+
+target_link_libraries(go3d PRIVATE 
+    GL
+    GLU
+    GLEW
+    dl
+    m
+)
+
