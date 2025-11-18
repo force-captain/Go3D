@@ -8,8 +8,6 @@ class Mesh;
 
 class Object2D : public Object {
     private:
-        static std::shared_ptr<Mesh> createQuadMesh();
-        std::shared_ptr<Mesh> mesh;
         glm::vec2 position;
         glm::vec2 scale;
         float rotation;
@@ -19,4 +17,5 @@ class Object2D : public Object {
         glm::mat4 getModelMatrix() const override;
         void update(float deltaTime) override;
         std::shared_ptr<Mesh> getMesh() { return mesh;}
+        bool contains(double mx, double my) const;
 };

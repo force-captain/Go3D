@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
+#include "graphics/input.hpp"
 
 struct GLFWwindow;
 class Shader;
@@ -18,10 +19,13 @@ class Renderer {
     private:
         static std::shared_ptr<Shader> getDefaultShader();
 
+        std::unique_ptr<Scene> scene;
+
         int width, height;
         const char* title;
 
         GLFWwindow* window;
+        Input input;
 
         double lastFrameTime = 0.0;
         double deltaTime = 0.0;
@@ -31,8 +35,8 @@ class Renderer {
 
         static void onResize(GLFWwindow* win, int w, int h);
 
-        void renderObject(const Object3D& obj, const Camera& cam);
-        void renderObject(const Object2D& obj);
+        void renderObject(Object3D& obj, const Camera& cam);
+        void renderObject(Object2D& obj);
 
     public:
         Renderer(int width, int height, const char* title)
@@ -49,5 +53,6 @@ class Renderer {
 
         GLFWwindow* getWindow() const;
 
-        void renderScene(const Scene& scene);
+        void renderScene();
+        std::unique_ptr<Scene> setScene(std::unique_ptr<Scene> newScene);
 };

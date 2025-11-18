@@ -1,6 +1,9 @@
 #include "graphics/objects/shader.hpp"
+#include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
+#include <sstream>
+#include <stdexcept>
 
 static void logError(GLuint src) {
     char infoLog[512];
@@ -21,9 +24,17 @@ GLuint Shader::compileShader(GLenum type, const std::string& source) {
     return shader;
 }
 
+const std::string loadFile(const std::string& path) {
+    std::ifstream file(path);
+    if (!file.is_open()) throw std::runtime_error("Failed to open shader");
+    std::stringstream buf;
+    buf << file.rdbuf();
+    return buf.str();
+}
+
 bool Shader::load(const std::string& vertexSource, const std::string& fragmentSource) {
-    GLuint vertex = compileShader(GL_VERTEX_SHADER, vertexSource);
-    GLuint fragment = compileShader(GL_FRAGMENT_SHADER, fragmentSource);
+    GLuint vertex = compileShader(GL_VERTEX_SHADER, loadFile(vertexSource));
+    GLuint fragment = compileShader(GL_FRAGMENT_SHADER, loadFile(fragmentSource));
 
     programID = glCreateProgram();
     glAttachShader(programID, vertex);

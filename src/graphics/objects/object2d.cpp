@@ -1,23 +1,12 @@
 #include "graphics/objects/object2d.hpp"
-#include "graphics/objects/object.hpp"
 #include "graphics/objects/mesh.hpp"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 
-std::shared_ptr<Mesh> Object2D::createQuadMesh() {
-    static std::shared_ptr<Mesh> quadMesh = std::make_shared<Mesh>(
-        std::vector<Vertex>{{{0,0,0}, {0,0,1}, {1,1,1}, {0,0}},
-    {{1,0,0}, {0,0,1}, {1,1,1}, {1,0}},
-    {{1,1,0}, {0,0,1}, {1,1,1}, {1,1}},
-    {{0,1,0}, {0,0,1}, {1,1,1}, {0,1}}
-}, std::vector<unsigned int>{
-    0,1,2, 2,3,0
-});
-    return quadMesh;
-}
 
-Object2D::Object2D(float x, float y, float width, float height) : position(x, y), rotation(0.0f), scale(width, height), mesh(createQuadMesh()) {
-
+Object2D::Object2D(float x, float y, float width, float height) : position(x, y), rotation(0.0f), scale(width, height) {
+    mesh = Mesh::getQuad();
+    initBounds();
 }
 
 glm::mat4 Object2D::getModelMatrix() const {
@@ -29,4 +18,15 @@ glm::mat4 Object2D::getModelMatrix() const {
     return model;
 }
 
-void Object2D::update(float deltaTime){}
+void Object2D::update(float deltaTime){
+    onUpdate(deltaTime);
+}
+
+bool Object2D::contains(double mx, double my) const {
+    glm::vec4 worldPoint(mx, my, 0.0f, 1.0f);
+    glm::mat4 invModel = glm::inverse(getModelMatrix());
+    glm::vec4 local = invModel * worldPoint;
+
+    return (local.x >= bounds.min.x && local.x <= bounds.max.x &&
+            local.y >= bounds.min.y && local.y <= bounds.max.y);
+}

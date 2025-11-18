@@ -74,8 +74,10 @@ void Renderer::updateDeltaTime() {
 }
 
 void Renderer::update() {
-    glfwSwapBuffers(window);
+    updateDeltaTime();
     glfwPollEvents();
+    input.update(window);
+    glfwSwapBuffers(window);
 }
 
 void Renderer::cleanup() {
@@ -86,7 +88,7 @@ void Renderer::cleanup() {
 
 // Drawing
 
-void Renderer::renderObject(const Object2D& obj) {
+void Renderer::renderObject(Object2D& obj) {
     glm::mat4 projection = glm::ortho(0.0f, float(width), 0.0f, float(height), -1.0f, 1.0f);
     
     const Material& mat = obj.getMaterial();
@@ -101,11 +103,12 @@ void Renderer::renderObject(const Object2D& obj) {
     shader->setMat4("u_MVP", mvp);
     shader->setVec3("u_Color", mat.colour);
 
-    obj.getMesh()->bind();
+    glBindVertexArray(obj.getMesh()->getVAO());
     glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
 }
 
-void Renderer::renderObject(const Object3D& obj, const Camera& cam) {
+void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     glm::mat4 view = cam.getViewMatrix();
     glm::mat4 proj = cam.getProjectionMatrix();
 
@@ -134,10 +137,10 @@ void Renderer::renderObject(const Object3D& obj, const Camera& cam) {
 }
 
 
-void Renderer::renderScene(const Scene& scene) {
-    for (const auto& [id, obj]: scene.getObjects()) {
+void Renderer::renderScene() {
+    for (const auto& [id, obj]: scene->getObjects()) {
         if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
-            renderObject(*o3_ptr, scene.getCamera());
+            renderObject(*o3_ptr, scene->getCamera());
         else {
             Object2D* o2_ptr = static_cast<Object2D*>(obj.get());
             renderObject(*o2_ptr);
@@ -145,11 +148,17 @@ void Renderer::renderScene(const Scene& scene) {
     }
 }
 
-std::shared_ptr<Shader> getDefaultShader() {
+std::shared_ptr<Shader> Renderer::getDefaultShader() {
     static std::shared_ptr<Shader> defaultShader = []() { 
         auto shader = std::make_shared<Shader>();
-        shader->load("default2D.vert", "default2D.frag");
+        shader->load("assets/shaders/default2D.vert", "assets/shaders/default2D.frag");
         return shader; }();
 
     return defaultShader;
+}
+
+std::unique_ptr<Scene> Renderer::setScene(std::unique_ptr<Scene> newScene) {
+    std::unique_ptr<Scene> oldScene = std::move(scene);
+    scene = std::move(newScene);
+    return oldScene;
 }

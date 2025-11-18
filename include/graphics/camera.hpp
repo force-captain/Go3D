@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+class Ray;
+
 class Camera {
     private:
         glm::vec3 target;
@@ -29,4 +31,6 @@ class Camera {
 
         glm::vec3 getPosition() const;
         glm::vec3 getTarget() const { return target; }
+
+        Ray screenPoint(double mx, double my, float width, float height) const;
 };

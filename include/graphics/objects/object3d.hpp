@@ -6,11 +6,10 @@
 #include <glm/glm.hpp>
 
 class Mesh;
+class Ray;
 
 class Object3D : public Object {
     private:
-        std::shared_ptr<Mesh> mesh;
-
         glm::vec3 position;
         glm::vec3 scale = glm::vec3(1.0f);
         glm::vec3 rotation = glm::vec3(0.0f);
@@ -21,4 +20,6 @@ class Object3D : public Object {
         std::shared_ptr<Mesh> getMesh() const { return mesh; }
 
         glm::mat4 getModelMatrix() const;
+        bool contains(Ray& ray) const;
+        void update(float deltaTime) override;
 };
