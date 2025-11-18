@@ -9,6 +9,7 @@
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_double4x4.hpp>
+#include <memory>
 #include <iostream>
 
 
@@ -49,7 +50,7 @@ bool Renderer::init() {
     }
 
     // Depth testing
-    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_DEPTH_TEST);
     glEnable(GL_CULL_FACE);
 
     glViewport(0, 0, width, height);
@@ -88,8 +89,20 @@ void Renderer::cleanup() {
 void Renderer::renderObject(const Object2D& obj) {
     glm::mat4 projection = glm::ortho(0.0f, float(width), 0.0f, float(height), -1.0f, 1.0f);
     
-    auto shader = obj.getMaterial().shader;
-    if (!shader) return;
+    const Material& mat = obj.getMaterial();
+    auto shader = mat.shader;
+
+    if (!shader) {
+        shader = getDefaultShader();
+    }
+
+    shader->use();
+    glm::mat4 mvp = projection * obj.getModelMatrix();
+    shader->setMat4("u_MVP", mvp);
+    shader->setVec3("u_Color", mat.colour);
+
+    obj.getMesh()->bind();
+    glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
 }
 
 void Renderer::renderObject(const Object3D& obj, const Camera& cam) {
@@ -122,12 +135,21 @@ void Renderer::renderObject(const Object3D& obj, const Camera& cam) {
 
 
 void Renderer::renderScene(const Scene& scene) {
-    for (const auto& a: scene.getObjects()) {
-        if (scene.is3DScene()) {
-            
-
-        } else {
-
+    for (const auto& [id, obj]: scene.getObjects()) {
+        if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
+            renderObject(*o3_ptr, scene.getCamera());
+        else {
+            Object2D* o2_ptr = static_cast<Object2D*>(obj.get());
+            renderObject(*o2_ptr);
         }
     }
+}
+
+std::shared_ptr<Shader> getDefaultShader() {
+    static std::shared_ptr<Shader> defaultShader = []() { 
+        auto shader = std::make_shared<Shader>();
+        shader->load("default2D.vert", "default2D.frag");
+        return shader; }();
+
+    return defaultShader;
 }

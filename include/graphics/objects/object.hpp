@@ -11,8 +11,8 @@ class Object {
 
         virtual glm::mat4 getModelMatrix() const = 0;
 
-        virtual void update(float deltaTime);
+        virtual void update(float deltaTime) = 0;
         
-        void setMaterial(const Material& mat);
+        void setMaterial(const Material& newMat) {mat = newMat; }
         const Material& getMaterial() const { return mat; }
 };

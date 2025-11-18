@@ -1,13 +1,22 @@
 #pragma once
 
 #include "graphics/objects/object.hpp"
-#include "graphics/objects/mesh.hpp"
+#include <glm/glm.hpp>
+#include <memory>
+
+class Mesh;
 
 class Object2D : public Object {
     private:
-        static Mesh quadMesh;
+        static std::shared_ptr<Mesh> createQuadMesh();
+        std::shared_ptr<Mesh> mesh;
+        glm::vec2 position;
+        glm::vec2 scale;
+        float rotation;
 
     public:
         Object2D(float x, float y, float width, float height);
-        virtual void draw() const;
+        glm::mat4 getModelMatrix() const override;
+        void update(float deltaTime) override;
+        std::shared_ptr<Mesh> getMesh() { return mesh;}
 };

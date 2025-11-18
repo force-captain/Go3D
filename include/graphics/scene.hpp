@@ -19,7 +19,7 @@ class Scene {
         bool is3D;
 
     public:
-        Scene(bool is3D) : is3D(is3D) {}
+        Scene(bool is3D);
         ~Scene();
 
         uint64_t addObject(std::unique_ptr<Object> obj);
@@ -29,6 +29,8 @@ class Scene {
         void setCamera(std::unique_ptr<Camera>);
         void pointCamera(glm::vec3 target);
         void rotateCamera(float dYaw, float dPitch);
+
+        const Camera& getCamera() const { return *camera; }
 
         bool is3DScene() const { return is3D; }
 

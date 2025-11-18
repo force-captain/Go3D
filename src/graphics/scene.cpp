@@ -1,6 +1,9 @@
 #include "graphics/scene.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/light.hpp"
+#include "graphics/objects/object.hpp"
+
+Scene::Scene(bool is3D) : is3D(is3D) {}
 
 Scene::~Scene() {
 
