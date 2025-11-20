@@ -3,14 +3,18 @@
 #include "graphics/objects/object2d.hpp"
 #include "graphics/objects/mesh.hpp"
 #include "graphics/camera.hpp"
+#include "graphics/light.hpp"
 #include "graphics/scene.hpp"
 #include "graphics/objects/shader.hpp"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_double4x4.hpp>
+#include <glm/trigonometric.hpp>
 #include <memory>
 #include <iostream>
+
+static const float CAMERA_SPEED = 20.0f;
 
 
 void Renderer::onResize(GLFWwindow* win, int w, int h) {
@@ -50,8 +54,8 @@ bool Renderer::init() {
     }
 
     // Depth testing
-    //glEnable(GL_DEPTH_TEST);
-    glEnable(GL_CULL_FACE);
+    glEnable(GL_DEPTH_TEST);
+    //glEnable(GL_CULL_FACE);
 
     glViewport(0, 0, width, height);
 
@@ -78,6 +82,16 @@ void Renderer::update() {
     glfwPollEvents();
     input.update(window);
     glfwSwapBuffers(window);
+
+    if (input.isKeyPressed(GLFW_KEY_RIGHT)) 
+        scene->rotateCamera(glm::radians(deltaTime * CAMERA_SPEED), 0.0f);
+    if (input.isKeyPressed(GLFW_KEY_LEFT)) 
+        scene->rotateCamera(glm::radians(deltaTime * -CAMERA_SPEED), 0.0f);
+    if (input.isKeyPressed(GLFW_KEY_UP)) 
+        scene->rotateCamera(0.0f, glm::radians(deltaTime * CAMERA_SPEED));
+    if (input.isKeyPressed(GLFW_KEY_DOWN))
+        scene->rotateCamera(0.0f, glm::radians(deltaTime * -CAMERA_SPEED));
+
 }
 
 void Renderer::cleanup() {
@@ -116,29 +130,53 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     if (!shader) return;
 
     shader->use();
+    
+    // Lighting
+    const auto& lights = scene->getLights();
+    shader->setInt("numLights", lights.size());
+
+    for(size_t i = 0; i < lights.size(); i++) {
+        const Light* light = lights[i].get();
+        std::string base = "lights["+std::to_string(i)+"]";
+
+        shader->setInt(base + ".type", light->getType());
+        shader->setVec3(base + ".position", light->getPos());
+        shader->setVec3(base + ".direction", light->getDir());
+        shader->setVec3(base + ".color", light->getClr());
+
+        shader->setFloat(base + ".intensity", light->getIntensity());
+        shader->setFloat(base + ".constant", light->getConstant());
+        shader->setFloat(base + ".linear", light->getLinear());
+        shader->setFloat(base + ".quadratic", light->getQuadratic());
+    }
+
+    // Transformation
     shader->setMat4("model", obj.getModelMatrix());
     shader->setMat4("view", view);
     shader->setMat4("projection", proj);
     shader->setVec3("objectColour", obj.getMaterial().colour);
 
+    // Texture
     if (obj.getMaterial().textureID != 0) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, obj.getMaterial().textureID);
         shader->setInt("diffuseTexture", 0);
     }
 
+    // Drawing
     glBindVertexArray(obj.getMesh()->getVAO());
     if (obj.getMesh()->getEBO() != 0) 
         glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
     else 
         glDrawArrays(GL_TRIANGLES, 0, obj.getMesh()->vertexCount());
-
     glBindVertexArray(0);
 }
 
 
 void Renderer::renderScene() {
     for (const auto& [id, obj]: scene->getObjects()) {
+        auto shader = obj->getMaterial().shader;
+
         if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
             renderObject(*o3_ptr, scene->getCamera());
         else {

@@ -53,6 +53,8 @@ class Renderer {
 
         GLFWwindow* getWindow() const;
 
+        const Input& getInput() const { return input; }
+
         void renderScene();
         std::unique_ptr<Scene> setScene(std::unique_ptr<Scene> newScene);
 };

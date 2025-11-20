@@ -16,15 +16,16 @@ class Scene {
         std::unique_ptr<Camera> camera;
         std::vector<std::unique_ptr<Light>> lights;
         uint64_t nextID = 1;
-        bool is3D;
 
     public:
-        Scene(bool is3D);
-        ~Scene();
+        Scene() = default;
+        ~Scene() = default;
 
         uint64_t addObject(std::unique_ptr<Object> obj);
 
         bool removeObject(uint64_t id);
+
+        void addLight(std::unique_ptr<Light> light);
 
         void setCamera(std::unique_ptr<Camera>);
         void pointCamera(glm::vec3 target);
@@ -32,8 +33,8 @@ class Scene {
 
         const Camera& getCamera() const { return *camera; }
 
-        bool is3DScene() const { return is3D; }
-
         Object* getObject(uint64_t id);
+
         const std::unordered_map<uint64_t, std::unique_ptr<Object>>& getObjects() const { return objects; }
+        const std::vector<std::unique_ptr<Light>>& getLights() const { return lights; }
 };

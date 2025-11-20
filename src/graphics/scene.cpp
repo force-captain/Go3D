@@ -2,17 +2,16 @@
 #include "graphics/camera.hpp"
 #include "graphics/light.hpp"
 #include "graphics/objects/object.hpp"
-
-Scene::Scene(bool is3D) : is3D(is3D) {}
-
-Scene::~Scene() {
-
-}
+#include <vector>
 
 uint64_t Scene::addObject(std::unique_ptr<Object> obj) {
     uint64_t id = nextID++;
     objects[id] = std::move(obj);
     return id;
+}
+
+void Scene::addLight(std::unique_ptr<Light> light) {
+    lights.push_back(std::move(light));
 }
 
 bool Scene::removeObject(uint64_t id) {

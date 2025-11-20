@@ -22,4 +22,7 @@ class Object3D : public Object {
         glm::mat4 getModelMatrix() const;
         bool contains(Ray& ray) const;
         void update(float deltaTime) override;
+
+        void setScale(glm::vec3 newS) { scale = newS;}
+        void resize(glm::vec3 size) { scale *= size; }
 };

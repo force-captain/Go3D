@@ -14,4 +14,7 @@ class Ray {
 
         Ray transform(const glm::mat4& mat) const;
         glm::vec3 at(float t) const { return origin + direction * t; }
+        
+        bool intersects(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float t);
+        bool intersectsAABB(const glm::vec3& min, const glm::vec3& max, float* tNear = nullptr, float* tFar = nullptr);
 };
