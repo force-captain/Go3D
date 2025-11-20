@@ -33,9 +33,11 @@ endif()
 # Link libraries
 cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
+find_package(assimp REQUIRED)
 
 target_link_libraries(go3d PRIVATE 
     GL
+    assimp::assimp
     GLU
     GLEW
     dl

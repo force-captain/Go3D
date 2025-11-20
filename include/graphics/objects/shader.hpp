@@ -31,4 +31,6 @@ struct Material {
     glm::vec3 colour = glm::vec3(1.0f);
     GLuint textureID = 0;
     std::shared_ptr<Shader> shader;
+    Material(const glm::vec3& col, GLuint texID, const std::shared_ptr<Shader> shader) 
+        : colour(col), textureID(texID), shader(shader) {}
 };

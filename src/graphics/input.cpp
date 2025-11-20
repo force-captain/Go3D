@@ -9,9 +9,27 @@ void Input::update(GLFWwindow* window) {
 
     // Mouse 
     for (int i = 0; i < MAX_BUTTONS; i++) {
-        buttons[i] = glfwGetMouseButton(window, i) == GLFW_PRESS;
+        bool pressed = glfwGetMouseButton(window, i) == GLFW_PRESS;
+        buttons[i] = pressed;
+
+        dragDX[i] = pressed ? mouseX - lastMouseX : 0;
+        dragDY[i] = pressed ? mouseY - lastMouseY : 0;
     }
+
+    lastMouseX = mouseX;
+    lastMouseY = mouseY;
+
     glfwGetCursorPos(window, &mouseX, &mouseY);
+}
+
+double Input::getDragX(int button) const {
+    return (button < 0 || button >= MAX_BUTTONS) ? 0
+        : dragDX[button];
+}
+
+double Input::getDragY(int button) const {
+    return (button < 0 || button >= MAX_BUTTONS) ? 0
+        : dragDY[button];
 }
 
 bool Input::isKeyPressed(int key) const {

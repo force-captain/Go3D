@@ -1,8 +1,11 @@
 #pragma once
+#include <utility>
 #include <vector>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <memory>
+
+struct Material;
 
 struct Vertex {
     glm::vec3 position;
@@ -20,17 +23,21 @@ class Mesh {
     private:
         std::vector<Vertex> vertices;
         std::vector<unsigned int> indices;
-
         BoundingBox boundingBox;
+
         GLuint VAO = 0;
         GLuint VBO = 0;
         GLuint EBO = 0;
 
         void setupMesh();
 
+        static std::pair<std::vector<Vertex>, std::vector<unsigned int>> loadFile(const std::string& path);
+
     public:
         Mesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& inds);
+        Mesh(const std::string& path);
         ~Mesh();
+
 
         static std::shared_ptr<Mesh> getCube();
         static std::shared_ptr<Mesh> getQuad();
@@ -42,4 +49,6 @@ class Mesh {
         GLuint getVBO() const { return VBO; }
         GLuint getEBO() const { return EBO; }
         BoundingBox getBoundingBox() const { return boundingBox; }
+
+        void loadTexture(const std::string& path, Material& mat) const;
 };

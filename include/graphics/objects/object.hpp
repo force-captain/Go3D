@@ -1,13 +1,14 @@
 #pragma once
 
 #include <glm/fwd.hpp>
+#include <memory>
 #include "graphics/objects/shader.hpp"
 #include "graphics/objects/mesh.hpp"
 
 
 class Object {
     protected:
-        Material mat;
+        std::shared_ptr<Material> mat;
         BoundingBox bounds;
         std::shared_ptr<Mesh> mesh;
         std::function<void()> onClick;
@@ -26,8 +27,8 @@ class Object {
 
         BoundingBox getWorldBoundingBox() const;
         
-        void setMaterial(const Material& newMat) {mat = newMat; }
-        const Material& getMaterial() const { return mat; }
+        void setMaterial(const std::shared_ptr<Material>& newMat) {mat = newMat; }
+        const std::shared_ptr<Material>& getMaterial() const { return mat; }
 
         void triggerClick() { if (onClick) onClick(); }
         void triggerHover() { if (onHover) onHover(); }

@@ -14,7 +14,7 @@
 #include <memory>
 #include <iostream>
 
-static const float CAMERA_SPEED = 20.0f;
+static const float CAMERA_SPEED = 50.0f;
 
 
 void Renderer::onResize(GLFWwindow* win, int w, int h) {
@@ -55,7 +55,6 @@ bool Renderer::init() {
 
     // Depth testing
     glEnable(GL_DEPTH_TEST);
-    //glEnable(GL_CULL_FACE);
 
     glViewport(0, 0, width, height);
 
@@ -83,6 +82,7 @@ void Renderer::update() {
     input.update(window);
     glfwSwapBuffers(window);
 
+    // Keyboard
     if (input.isKeyPressed(GLFW_KEY_RIGHT)) 
         scene->rotateCamera(glm::radians(deltaTime * CAMERA_SPEED), 0.0f);
     if (input.isKeyPressed(GLFW_KEY_LEFT)) 
@@ -92,6 +92,12 @@ void Renderer::update() {
     if (input.isKeyPressed(GLFW_KEY_DOWN))
         scene->rotateCamera(0.0f, glm::radians(deltaTime * -CAMERA_SPEED));
 
+    // Mouse
+    double dx = input.getDragX(GLFW_MOUSE_BUTTON_RIGHT);
+    double dy = input.getDragY(GLFW_MOUSE_BUTTON_RIGHT);
+
+    float sens = 0.005f;
+    scene->rotateCamera(-dx * sens, dy * sens);
 }
 
 void Renderer::cleanup() {
@@ -105,8 +111,8 @@ void Renderer::cleanup() {
 void Renderer::renderObject(Object2D& obj) {
     glm::mat4 projection = glm::ortho(0.0f, float(width), 0.0f, float(height), -1.0f, 1.0f);
     
-    const Material& mat = obj.getMaterial();
-    auto shader = mat.shader;
+    const std::shared_ptr<Material>& mat = obj.getMaterial();
+    auto shader = mat->shader;
 
     if (!shader) {
         shader = getDefaultShader();
@@ -115,7 +121,7 @@ void Renderer::renderObject(Object2D& obj) {
     shader->use();
     glm::mat4 mvp = projection * obj.getModelMatrix();
     shader->setMat4("u_MVP", mvp);
-    shader->setVec3("u_Color", mat.colour);
+    shader->setVec3("u_Color", mat->colour);
 
     glBindVertexArray(obj.getMesh()->getVAO());
     glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
@@ -126,7 +132,7 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     glm::mat4 view = cam.getViewMatrix();
     glm::mat4 proj = cam.getProjectionMatrix();
 
-    auto shader = obj.getMaterial().shader;
+    auto shader = obj.getMaterial()->shader;
     if (!shader) return;
 
     shader->use();
@@ -154,12 +160,12 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     shader->setMat4("model", obj.getModelMatrix());
     shader->setMat4("view", view);
     shader->setMat4("projection", proj);
-    shader->setVec3("objectColour", obj.getMaterial().colour);
+    shader->setVec3("objectColour", obj.getMaterial()->colour);
 
     // Texture
-    if (obj.getMaterial().textureID != 0) {
+    if (obj.getMaterial()->textureID != 0) {
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, obj.getMaterial().textureID);
+        glBindTexture(GL_TEXTURE_2D, obj.getMaterial()->textureID);
         shader->setInt("diffuseTexture", 0);
     }
 
@@ -169,13 +175,17 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
         glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
     else 
         glDrawArrays(GL_TRIANGLES, 0, obj.getMesh()->vertexCount());
+
+    // Unbind
     glBindVertexArray(0);
+    if (obj.getMaterial()->textureID != 0) 
+        glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 
 void Renderer::renderScene() {
     for (const auto& [id, obj]: scene->getObjects()) {
-        auto shader = obj->getMaterial().shader;
+        auto shader = obj->getMaterial()->shader;
 
         if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
             renderObject(*o3_ptr, scene->getCamera());

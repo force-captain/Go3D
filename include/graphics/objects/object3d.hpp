@@ -25,4 +25,7 @@ class Object3D : public Object {
 
         void setScale(glm::vec3 newS) { scale = newS;}
         void resize(glm::vec3 size) { scale *= size; }
+
+        void setPosition(glm::vec3 pos) { position = pos; }
+        void translate(glm::vec3 offset) { position += offset; }
 };
