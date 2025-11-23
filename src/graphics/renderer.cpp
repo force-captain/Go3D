@@ -112,11 +112,7 @@ void Renderer::renderObject(Object2D& obj) {
     glm::mat4 projection = glm::ortho(0.0f, float(width), 0.0f, float(height), -1.0f, 1.0f);
     
     const std::shared_ptr<Material>& mat = obj.getMaterial();
-    auto shader = mat->shader;
-
-    if (!shader) {
-        shader = getDefaultShader();
-    }
+    auto shader = getDefaultShader();
 
     shader->use();
     glm::mat4 mvp = projection * obj.getModelMatrix();
@@ -136,6 +132,7 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     if (!shader) return;
 
     shader->use();
+
     
     // Lighting
     const auto& lights = scene->getLights();
@@ -163,6 +160,7 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     shader->setVec3("objectColour", obj.getMaterial()->colour);
 
     // Texture
+    shader->setInt("hasTexture", obj.getMaterial()->textureID != 0);
     if (obj.getMaterial()->textureID != 0) {
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, obj.getMaterial()->textureID);
@@ -182,18 +180,30 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
         glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void Renderer::set3Dmode(bool is3D) {
+    if (is3D) {
+        glEnable(GL_DEPTH_TEST);
+        glDepthMask(GL_TRUE);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+        glDepthMask(GL_FALSE);
+    }
+}
 
 void Renderer::renderScene() {
+    // Render 3D objects
     for (const auto& [id, obj]: scene->getObjects()) {
-        auto shader = obj->getMaterial()->shader;
-
         if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
             renderObject(*o3_ptr, scene->getCamera());
-        else {
-            Object2D* o2_ptr = static_cast<Object2D*>(obj.get());
-            renderObject(*o2_ptr);
-        }
     }
+
+    // Render 2D objects
+    set3Dmode(false);
+    for (const auto& [id, obj]: scene->getObjects()) {
+        if (Object2D* o2_ptr = dynamic_cast<Object2D*>(obj.get()))
+            renderObject(*o2_ptr);
+    }
+    set3Dmode(true);
 }
 
 std::shared_ptr<Shader> Renderer::getDefaultShader() {

@@ -10,7 +10,6 @@ struct Material;
 struct Vertex {
     glm::vec3 position;
     glm::vec3 normal;
-    glm::vec3 colour;
     glm::vec2 texCoords;
 };
 
@@ -30,6 +29,7 @@ class Mesh {
         GLuint EBO = 0;
 
         void setupMesh();
+        void initBox();
 
         static std::pair<std::vector<Vertex>, std::vector<unsigned int>> loadFile(const std::string& path);
 

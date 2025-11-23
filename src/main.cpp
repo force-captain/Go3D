@@ -15,12 +15,15 @@ int main() {
 
     auto scene = std::make_unique<Scene>();
 
-    // Shader
-    auto shader = std::make_shared<Shader>();
-    shader->load("assets/shaders/default3D.vert", "assets/shaders/default3D.frag");
+    // Shaders
+    auto shader3 = std::make_shared<Shader>();
+    shader3->load("assets/shaders/default3D.vert", "assets/shaders/default3D.frag");
+
+    auto shader2 = std::make_shared<Shader>();
+    shader2->load("assets/shaders/default2D.vert", "assets/shaders/default2D.frag");
 
     // Board
-    auto board_mat = std::make_shared<Material>(glm::vec3(1.0f, 1.0f, 1.0f), 0, shader);
+    auto board_mat = std::make_shared<Material>(glm::vec3(1.0f, 1.0f, 1.0f), 0, shader3);
     std::unique_ptr<Object3D> boardObj = std::make_unique<Object3D>(Mesh::getCube());
 
     boardObj->setMaterial(board_mat);
@@ -30,8 +33,8 @@ int main() {
     scene->addObject(std::move(boardObj));
 
     // Stone
-    auto stonemesh = std::make_shared<Mesh>("assets/stone.glb");
-    auto stonemat_w = std::make_shared<Material>(glm::vec3(1.0f, 1.0f, 1.0f), 0, shader);
+    auto stonemesh = std::make_shared<Mesh>("assets/stone.obj");
+    auto stonemat_w = std::make_shared<Material>(glm::vec3(0.5f), 0, shader3);
     std::unique_ptr<Object3D> stone_w = std::make_unique<Object3D>(stonemesh);
 
     stone_w->setMaterial(stonemat_w);
@@ -46,6 +49,15 @@ int main() {
 
     scene->addLight(std::move(light));
     scene->addLight(std::move(light2));
+
+
+    // UI
+    std::unique_ptr<Object2D> sizeButton = std::make_unique<Object2D>(0.0f, 0.0f, 300.0f, 100.0f);
+    auto ui_mat = std::make_shared<Material>(glm::vec3(1.0f), 0, shader2);
+
+    sizeButton->setMaterial(ui_mat);
+
+    //scene->addObject(std::move(sizeButton));
 
     std::unique_ptr<Camera> cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0f, 45.0f, 800.0f / 600.0f);
 

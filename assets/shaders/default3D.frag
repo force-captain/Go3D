@@ -7,6 +7,7 @@ in vec3 Normal;
 out vec4 FragColor;
 
 uniform sampler2D diffuseTexture;
+uniform bool hasTexture;
 uniform vec3 objectColour;
 uniform vec3 viewPos;
 
@@ -25,7 +26,7 @@ uniform Light lights[16];
 uniform int numLights;
 
 void main() {
-    vec3 texColour = texture(diffuseTexture, TexCoords).rgb;
+    vec3 texColour = hasTexture ? texture(diffuseTexture, TexCoords).rgb : vec3(1.0);
     vec3 norm = normalize(Normal);
     vec3 viewDir = normalize(viewPos - FragPos);
 

@@ -30,6 +30,8 @@ class Renderer {
         double lastFrameTime = 0.0;
         double deltaTime = 0.0;
         void updateDeltaTime();
+
+        void set3Dmode(bool is3D);
         
         void initDefaultShader();
 

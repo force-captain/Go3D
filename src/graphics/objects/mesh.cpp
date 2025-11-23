@@ -1,12 +1,12 @@
 #include "graphics/objects/mesh.hpp"
+#include <algorithm>
+#include <fstream>
 #include <glm/common.hpp>
 #include <glm/glm.hpp>
 #include <iostream>
-#include <assimp/Importer.hpp>
-#include <assimp/postprocess.h>
-#include <assimp/scene.h>
 #include <memory>
-#include <stdexcept>
+#include <sstream>
+#include <vector>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 #include "graphics/objects/shader.hpp"
@@ -14,51 +14,73 @@
 Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<unsigned int>& inds)
     : vertices(verts), indices(inds) {
     setupMesh();
+    initBox();
+}
+
+Mesh::Mesh(const std::string& path) {
+    auto [verts, inds] = loadFile(path);
+    vertices = verts;
+    indices = inds;
+    setupMesh();
+    initBox();
+}
+
+void Mesh::initBox() {
     boundingBox.min = glm::vec3(FLT_MAX);
     boundingBox.max = glm::vec3(-FLT_MAX);
-    for(const auto& v : vertices) {
+    for (const auto& v : vertices) {
         boundingBox.min = glm::min(boundingBox.min, v.position);
         boundingBox.max = glm::max(boundingBox.max, v.position);
     }
 }
 
-Mesh::Mesh(const std::string& path) : Mesh([&]() {
-        auto [verts, inds] = loadFile(path);
-        return Mesh(verts, inds);
-        }()) {}
-
-
 std::pair<std::vector<Vertex>, std::vector<unsigned int>> Mesh::loadFile(const std::string& path) {
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> UVs;
+
     std::vector<Vertex> verts;
     std::vector<unsigned int> inds;
 
-    Assimp::Importer importer;
+    std::ifstream file(path);
+    std::string line;
 
-    const aiScene* scene = importer.ReadFile(path,
-            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+    while (std::getline(file, line)) {
+        std::istringstream iss(line);
+        std::string prefix;
+        iss >> prefix;
 
-    if (!scene || !scene->mRootNode || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE)
-        throw std::runtime_error(importer.GetErrorString());
-
-    aiMesh* mesh = scene->mMeshes[0];
-
-    for(unsigned int i = 0; i < mesh->mNumVertices; i++) {
-        Vertex v;
-        v.position = glm::vec3(mesh->mVertices[i].x, mesh->mVertices[i].y, mesh->mVertices[i].z);
-        v.normal = mesh->HasNormals() ? glm::vec3(mesh->mNormals[i].x, mesh->mNormals[i].y, mesh->mNormals[i].z) : glm::vec3(0.0f);
-        v.colour = mesh->HasVertexColors(0) ? glm::vec3(mesh->mColors[0][i].r, mesh->mColors[0][i].g, mesh->mColors[0][i].b) : glm::vec3(1.0f);
-        v.texCoords = mesh->HasTextureCoords(0) ? glm::vec2(mesh->mTextureCoords[0][i].x, mesh->mTextureCoords[0][i].y) : glm::vec2(0.0f);
-        verts.push_back(v);
-    }
-
-    for(unsigned int i = 0; i < mesh->mNumFaces; i++) {
-        aiFace face = mesh->mFaces[i];
-        for(unsigned int j = 0; j < face.mNumIndices; j++) {
-            inds.push_back(face.mIndices[j]);
+        if (prefix == "v") {
+            glm::vec3 pos;
+            iss >> pos.x >> pos.y >> pos.z;
+            positions.push_back(pos);
+        } else if (prefix == "vn") {
+            glm::vec3 norm;
+            iss >> norm.x >> norm.y >> norm.z;
+            normals.push_back(norm);
+        } else if (prefix == "vt") {
+            glm::vec2 uv;
+            iss >> uv.x >> uv.y;
+            UVs.push_back(uv);
+        } else if (prefix == "f") {
+            std::string vert;
+            for (int i = 0; i < 3; i++) {
+                iss >> vert;
+                std::replace(vert.begin(), vert.end(), '/', ' ');
+                std::istringstream viss(vert);
+                int vIdx, vtIdx, vnIdx;
+                viss >> vIdx >> vtIdx >> vnIdx;
+                Vertex v;
+                v.position = positions[vIdx - 1];
+                v.normal = normals[vnIdx - 1];
+                v.texCoords = UVs[vtIdx - 1];
+                verts.push_back(v);
+                inds.push_back(verts.size() - 1);
+            }
         }
     }
 
-    return {verts, inds};
+    return { verts, inds };
 }
 
 Mesh::~Mesh() {
@@ -95,10 +117,6 @@ void Mesh::setupMesh() {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texCoords));
 
-    // Colour
-    glEnableVertexAttribArray(3);
-    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, colour));
-
     glBindVertexArray(0);
 }
 
@@ -121,36 +139,36 @@ float v6 = 1.0f;
 
 
 std::vector<Vertex> cubeVertices = {
-    // Positions          // Normals           // Colour         // texCoords
-    {{-0.5f,-0.5f,-0.5f}, {0.0f, 0.0f,-1.0f},  {1.0f,1.0f,1.0f}, {0.0f,v0}},
-    {{ 0.5f,-0.5f,-0.5f}, {0.0f, 0.0f,-1.0f},  {1.0f,1.0f,1.0f}, {1.0f,v0}},
-    {{ 0.5f, 0.5f,-0.5f}, {0.0f, 0.0f,-1.0f},  {1.0f,1.0f,1.0f}, {1.0f,v1}},
-    {{-0.5f, 0.5f,-0.5f}, {0.0f, 0.0f,-1.0f},  {1.0f,1.0f,1.0f}, {0.0f,v1}},
+    // Positions          // Normals          // texCoords
+    {{-0.5f,-0.5f,-0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f,v0}},
+    {{ 0.5f,-0.5f,-0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f,v0}},
+    {{ 0.5f, 0.5f,-0.5f}, {0.0f, 0.0f,-1.0f}, {1.0f,v1}},
+    {{-0.5f, 0.5f,-0.5f}, {0.0f, 0.0f,-1.0f}, {0.0f,v1}},
 
-    {{-0.5f,-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f},  {1.0f,1.0f,1.0f}, {0.0f,v1}},
-    {{ 0.5f,-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f},  {1.0f,1.0f,1.0f}, {1.0f,v1}},
-    {{ 0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f},  {1.0f,1.0f,1.0f}, {1.0f,v2}},
-    {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f},  {1.0f,1.0f,1.0f}, {0.0f,v2}},
+    {{-0.5f,-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f,v1}},
+    {{ 0.5f,-0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f,v1}},
+    {{ 0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {1.0f,v2}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}, {0.0f,v2}},
 
-    {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f,1.0f,1.0f}, {1.0f,v2}},
-    {{-0.5f, 0.5f,-0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f,1.0f,1.0f}, {1.0f,v3}},
-    {{-0.5f,-0.5f,-0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f,1.0f,1.0f}, {0.0f,v3}},
-    {{-0.5f,-0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f}, {1.0f,1.0f,1.0f}, {0.0f,v2}},
+    {{-0.5f, 0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f},{1.0f,v2}},
+    {{-0.5f, 0.5f,-0.5f}, {-1.0f, 0.0f, 0.0f},{1.0f,v3}},
+    {{-0.5f,-0.5f,-0.5f}, {-1.0f, 0.0f, 0.0f},{0.0f,v3}},
+    {{-0.5f,-0.5f, 0.5f}, {-1.0f, 0.0f, 0.0f},{0.0f,v2}},
 
-    {{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v3}},
-    {{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v4}},
-    {{ 0.5f,-0.5f,-0.5f}, {1.0f, 0.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v4}},
-    {{ 0.5f,-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v3}},
+    {{ 0.5f, 0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f,v3}},
+    {{ 0.5f, 0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {1.0f,v4}},
+    {{ 0.5f,-0.5f,-0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f,v4}},
+    {{ 0.5f,-0.5f, 0.5f}, {1.0f, 0.0f, 0.0f}, {0.0f,v3}},
 
-    {{-0.5f,-0.5f,-0.5f}, {0.0f,-1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v4}},
-    {{ 0.5f,-0.5f,-0.5f}, {0.0f,-1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v4}},
-    {{ 0.5f,-0.5f, 0.5f}, {0.0f,-1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v5}},
-    {{-0.5f,-0.5f, 0.5f}, {0.0f,-1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v5}},
+    {{-0.5f,-0.5f,-0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f,v4}},
+    {{ 0.5f,-0.5f,-0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f,v4}},
+    {{ 0.5f,-0.5f, 0.5f}, {0.0f,-1.0f, 0.0f}, {1.0f,v5}},
+    {{-0.5f,-0.5f, 0.5f}, {0.0f,-1.0f, 0.0f}, {0.0f,v5}},
 
-    {{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v5}},
-    {{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v5}},
-    {{ 0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {1.0f,v6}},
-    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f},  {1.0f,1.0f,1.0f}, {0.0f,v6}},
+    {{-0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f,v5}},
+    {{ 0.5f, 0.5f,-0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f,v5}},
+    {{ 0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {1.0f,v6}},
+    {{-0.5f, 0.5f, 0.5f}, {0.0f, 1.0f, 0.0f}, {0.0f,v6}},
 };
 
 std::vector<unsigned int> cubeIndices = {
@@ -163,10 +181,10 @@ std::vector<unsigned int> cubeIndices = {
 };
 
 std::vector<Vertex> quadVertices = {
-    {{-0.5f,-0.5f,0.0f}, {0,0,1}, {1,1,1}, {0,0}},
-    {{ 0.5f,-0.5f,0.0f}, {0,0,1}, {1,1,1}, {1,0}},
-    {{ 0.5f, 0.5f,0.0f}, {0,0,1}, {1,1,1}, {1,1}},
-    {{-0.5f, 0.5f,0.0f}, {0,0,1}, {1,1,1}, {0,1}}
+    {{-0.5f,-0.5f,0.0f}, {0,0,1}, {0,0}},
+    {{ 0.5f,-0.5f,0.0f}, {0,0,1}, {1,0}},
+    {{ 0.5f, 0.5f,0.0f}, {0,0,1}, {1,1}},
+    {{-0.5f, 0.5f,0.0f}, {0,0,1}, {0,1}}
 };
 
 std::vector<unsigned int> quadIndices = {
