@@ -1,6 +1,7 @@
 #pragma once
 
 #include "types.hpp"
+#include "glm/glm.hpp"
 #include <unordered_set>
 
 class Group;
@@ -10,6 +11,7 @@ class Tile {
     private:
         int x;
         int y;
+        int board_size;
         Colour colour;
         Group* group;
         std::unordered_set<Tile*> neighbours;
@@ -26,4 +28,6 @@ class Tile {
 
         Colour getColour() const { return colour; }
         Group* getGroup() const  { return group;  } 
+
+        glm::vec3 getRenderPos() const;
 };

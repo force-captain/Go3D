@@ -5,10 +5,28 @@
 #include "graphics/renderer.hpp"
 #include "graphics/scene.hpp"
 #include <GLFW/glfw3.h>
+#include <array>
 #include <glm/trigonometric.hpp>
 #include <memory>
+#include <string>
 
-int main() {
+/*
+ * Square sizes:
+ * 9x9   = 0.6f
+ * 13x13 = 0.4f
+ * 19x19 = 0.275f
+ *
+ * Stone sizes:
+ * 9x9   = 0.25f
+ * 13x13 = 0.175f
+ * 19x19 = 0.1125f
+ */
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        perror("Usage: go3d <9/13/19>");
+    }
+    int boardsize = std::stoi(argv[1]);
     Renderer renderer(800, 600, "Go3D");
     
     if (!renderer.init()) return -1;
@@ -27,19 +45,21 @@ int main() {
     std::unique_ptr<Object3D> boardObj = std::make_unique<Object3D>(Mesh::getCube());
 
     boardObj->setMaterial(board_mat);
-    boardObj->getMesh()->loadTexture("assets/board13.png", *board_mat);
+    boardObj->getMesh()->loadTexture("assets/board19.png", *board_mat);
     boardObj->setScale(glm::vec3(6.0f, 0.5f, 6.0f));
 
     scene->addObject(std::move(boardObj));
 
-    // Stone
+    // Stones
+    std::array<std::weak_ptr<Tile>,
+
     auto stonemesh = std::make_shared<Mesh>("assets/stone.obj");
     auto stonemat_w = std::make_shared<Material>(glm::vec3(0.5f), 0, shader3);
     std::unique_ptr<Object3D> stone_w = std::make_unique<Object3D>(stonemesh);
 
     stone_w->setMaterial(stonemat_w);
-    stone_w->setScale(glm::vec3(0.5f));
-    stone_w->translate(glm::vec3(0.0f, 1.0f, 0.0f));
+    stone_w->setScale(glm::vec3(0.1125f));
+    stone_w->translate(glm::vec3(0.0f, 0.3f, 0.0f));
 
     scene->addObject(std::move(stone_w));
 
