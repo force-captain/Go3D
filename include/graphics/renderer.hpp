@@ -39,6 +39,7 @@ class Renderer {
 
         void renderObject(Object3D& obj, const Camera& cam);
         void renderObject(Object2D& obj);
+        void renderScene();
 
     public:
         Renderer(int width, int height, const char* title)
@@ -53,10 +54,10 @@ class Renderer {
         bool shouldClose() const;
         void cleanup();
 
-        GLFWwindow* getWindow() const;
+        GLFWwindow* getWindow() const { return window; }
 
         const Input& getInput() const { return input; }
 
-        void renderScene();
+        void render();
         std::unique_ptr<Scene> setScene(std::unique_ptr<Scene> newScene);
 };

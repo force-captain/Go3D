@@ -9,6 +9,7 @@
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <string>
+#include <thread>
 
 /*
  * Square sizes:
@@ -51,7 +52,6 @@ int main(int argc, char *argv[]) {
     scene->addObject(std::move(boardObj));
 
     // Stones
-    std::array<std::weak_ptr<Tile>,
 
     auto stonemesh = std::make_shared<Mesh>("assets/stone.obj");
     auto stonemat_w = std::make_shared<Material>(glm::vec3(0.5f), 0, shader3);
@@ -89,11 +89,33 @@ int main(int argc, char *argv[]) {
 
     renderer.setScene(std::move(scene));
 
+    const double maxFPS = 144.0;
+    const double frameTime = 1.0 / maxFPS;
+
+    renderer.render();
+    renderer.update();
 
     while(!renderer.shouldClose()) {
+        bool active = glfwGetWindowAttrib(renderer.getWindow(), GLFW_FOCUSED) &&
+            !glfwGetWindowAttrib(renderer.getWindow(), GLFW_ICONIFIED);
+
+        if (!active) {
+            // Block until some event happens to stay responsive
+            glfwWaitEvents();
+            continue; // skip rendering while inactive
+        }
+
+        double start = glfwGetTime();
+
         renderer.clear();
-        renderer.renderScene();
+        renderer.render();
         renderer.update();
+
+        double end = glfwGetTime();
+        double delta = end - start;
+        if (delta < frameTime) {
+            std::this_thread::sleep_for(std::chrono::duration<double>(frameTime - delta));
+        }
     }
 
     return 0;

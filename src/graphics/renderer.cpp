@@ -47,10 +47,11 @@ bool Renderer::init() {
     glfwMakeContextCurrent(window);
     glfwSetFramebufferSizeCallback(window, onResize);
 
+    glGetError();
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         std::cerr << "Failed to init GLEW\n";
-        return false;
+        //return false;
     }
 
     // Depth testing
@@ -80,7 +81,6 @@ void Renderer::update() {
     updateDeltaTime();
     glfwPollEvents();
     input.update(window);
-    glfwSwapBuffers(window);
 
     // Keyboard
     if (input.isKeyPressed(GLFW_KEY_RIGHT)) 
@@ -104,6 +104,11 @@ void Renderer::cleanup() {
     glfwDestroyWindow(window);
     glfwTerminate();
     window = nullptr;
+}
+
+void Renderer::render() {
+    renderScene();
+    glfwSwapBuffers(window);
 }
 
 // Drawing
@@ -220,3 +225,4 @@ std::unique_ptr<Scene> Renderer::setScene(std::unique_ptr<Scene> newScene) {
     scene = std::move(newScene);
     return oldScene;
 }
+
