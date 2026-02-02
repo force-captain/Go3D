@@ -1,9 +1,12 @@
 #include "graphics/light.hpp"
+#include "graphics/logic_interface.hpp"
 #include "graphics/objects/object2d.hpp"
 #include "graphics/objects/object3d.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/renderer.hpp"
 #include "graphics/scene.hpp"
+#include "board.hpp"
+#include "types.hpp"
 #include <GLFW/glfw3.h>
 #include <array>
 #include <glm/trigonometric.hpp>
@@ -21,22 +24,15 @@
  * 9x9   = 0.25f
  * 13x13 = 0.175f
  * 19x19 = 0.1125f
+ *
+ * Height translations:
+ * 9x9   = 0.325f
+ * 13x13 = 0.3125f
+ * 19x19 = 0.3f
  */
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        perror("Usage: go3d <9/13/19>");
-    }
-    int boardsize = std::stoi(argv[1]);
-    Renderer renderer(800, 600, "Go3D");
-    
-    if (!renderer.init()) return -1;
-
+std::unique_ptr<Scene> initScene(std::string boardsize, std::shared_ptr<Shader> shader3) {
     auto scene = std::make_unique<Scene>();
-
-    // Shaders
-    auto shader3 = std::make_shared<Shader>();
-    shader3->load("assets/shaders/default3D.vert", "assets/shaders/default3D.frag");
 
     auto shader2 = std::make_shared<Shader>();
     shader2->load("assets/shaders/default2D.vert", "assets/shaders/default2D.frag");
@@ -46,22 +42,12 @@ int main(int argc, char *argv[]) {
     std::unique_ptr<Object3D> boardObj = std::make_unique<Object3D>(Mesh::getCube());
 
     boardObj->setMaterial(board_mat);
-    boardObj->getMesh()->loadTexture("assets/board19.png", *board_mat);
+    boardObj->getMesh()->loadTexture(
+            "assets/board"+boardsize+".png",
+            *board_mat);
     boardObj->setScale(glm::vec3(6.0f, 0.5f, 6.0f));
 
     scene->addObject(std::move(boardObj));
-
-    // Stones
-
-    auto stonemesh = std::make_shared<Mesh>("assets/stone.obj");
-    auto stonemat_w = std::make_shared<Material>(glm::vec3(0.5f), 0, shader3);
-    std::unique_ptr<Object3D> stone_w = std::make_unique<Object3D>(stonemesh);
-
-    stone_w->setMaterial(stonemat_w);
-    stone_w->setScale(glm::vec3(0.1125f));
-    stone_w->translate(glm::vec3(0.0f, 0.3f, 0.0f));
-
-    scene->addObject(std::move(stone_w));
 
     // Lights
     auto light = std::make_unique<Light>(LightType::Point, 1.0f, glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(-1.0f));
@@ -86,37 +72,33 @@ int main(int argc, char *argv[]) {
     Camera* rcam = cam.get();
     
     scene->setCamera(std::move(cam));
+    return scene;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc != 2) {
+        perror("Usage: go3d <9/13/19>");
+    }
+    int boardsize = std::stoi(argv[1]);
+    Renderer renderer(800, 600, "Go3D");
+    
+    // Logic setup
+    Board board(boardsize);
+    board.attemptMove(Colour::BLACK, 2, 2);
+
+    // 3D setup
+    if (!renderer.init()) return -1;
+
+    auto shader3 = std::make_shared<Shader>();
+    shader3->load("assets/shaders/default3D.vert", "assets/shaders/default3D.frag");
+
+    auto scene = initScene(std::string(argv[1]), shader3);
+
+    auto interface = std::make_unique<LogicInterface>(*scene, board, boardsize, shader3);
 
     renderer.setScene(std::move(scene));
 
-    const double maxFPS = 144.0;
-    const double frameTime = 1.0 / maxFPS;
-
-    renderer.render();
-    renderer.update();
-
-    while(!renderer.shouldClose()) {
-        bool active = glfwGetWindowAttrib(renderer.getWindow(), GLFW_FOCUSED) &&
-            !glfwGetWindowAttrib(renderer.getWindow(), GLFW_ICONIFIED);
-
-        if (!active) {
-            // Block until some event happens to stay responsive
-            glfwWaitEvents();
-            continue; // skip rendering while inactive
-        }
-
-        double start = glfwGetTime();
-
-        renderer.clear();
-        renderer.render();
-        renderer.update();
-
-        double end = glfwGetTime();
-        double delta = end - start;
-        if (delta < frameTime) {
-            std::this_thread::sleep_for(std::chrono::duration<double>(frameTime - delta));
-        }
-    }
+    renderer.mainLoop(std::move(interface));
 
     return 0;
 }

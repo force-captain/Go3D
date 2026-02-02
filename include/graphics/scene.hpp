@@ -9,6 +9,7 @@
 class Object;
 class Camera;
 class Light;
+class Board;
 
 class Scene {
     private:

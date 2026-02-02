@@ -1,4 +1,5 @@
 #include "graphics/scene.hpp"
+#include "board.hpp"
 #include "graphics/camera.hpp"
 #include "graphics/light.hpp"
 #include "graphics/objects/object.hpp"

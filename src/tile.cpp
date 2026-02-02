@@ -3,12 +3,12 @@
 #include "board.hpp"
 #include <unordered_set>
 
-Tile::Tile(Board* b, int x, int y) : x(x), y(y) {
-    for(int r = -1; r <= 1; r += 2) {
-        for(int c = -1; c <= 1; c += 2) {
-            Tile* n = (*b)(x + r, x + c);
-            if (n != nullptr) neighbours.insert(n);
-        }
+void Tile::setNeighbours(Board* b) {
+    for(int i = -1; i <= 1; i += 2) {
+          Tile* v = (*b)(x, y + i);
+          Tile* h = (*b)(x + i, y);
+          if (v != nullptr) neighbours.insert(v);
+          if (h != nullptr) neighbours.insert(h);
     }
 }
 

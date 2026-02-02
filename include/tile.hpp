@@ -17,10 +17,12 @@ class Tile {
         std::unordered_set<Tile*> neighbours;
 
     public:
-        Tile(Board* b, int x, int y);
+        Tile(int x, int y) : x(x), y(y), colour(Colour::EMPTY), group(nullptr) {}
         ~Tile() = default;
 
         bool isEmpty() const { return colour == Colour::EMPTY; }
+
+        void setNeighbours(Board* b);
 
         void setGroup(Group& g);
         void clearGroup();

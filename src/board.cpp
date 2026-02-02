@@ -9,9 +9,16 @@ Board::Board(int size)
     : size(size) { 
     for (int r = 0; r < size; r++) {
         for (int c = 0; c < size; c++) {
-            tiles.push_back(Tile(this, r, c));
+            tiles.push_back(Tile(r, c));
         }
     }
+
+    for (int i = 0; i < size * size; i++) {
+        tiles[i].setNeighbours(this);
+    }
+    uint64_t start_state = getHash(this, Colour::BLACK);
+    lastState = start_state;
+    previousStates.insert(start_state);
 }
 
 Tile* Board::operator()(int row, int col) {
@@ -47,6 +54,7 @@ bool Board::checkKo(Colour c) {
     uint64_t state = getHash(this, c);
     if (previousStates.count(state) > 0) return true;
     previousStates.insert(state);
+    lastState = state;
     return false;
 }
 

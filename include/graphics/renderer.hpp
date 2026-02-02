@@ -5,6 +5,7 @@
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
 #include "graphics/input.hpp"
+#include "graphics/logic_interface.hpp"
 
 struct GLFWwindow;
 class Shader;
@@ -58,6 +59,8 @@ class Renderer {
 
         const Input& getInput() const { return input; }
 
+        void mainLoop(std::unique_ptr<LogicInterface> interface);
         void render();
         std::unique_ptr<Scene> setScene(std::unique_ptr<Scene> newScene);
+
 };

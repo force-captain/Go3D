@@ -5,9 +5,8 @@
 #include <unordered_set>
 #include <vector>
 #include "types.hpp"
-
-class Group;
-class Tile;
+#include "tile.hpp"
+#include "group.hpp"
 
 class Board {
     private:
@@ -19,12 +18,16 @@ class Board {
         Group* initiateMove(Colour colour, Tile* t);
         void commitMove(Group* g, Tile* t);
         bool checkKo(Colour c);
+
+        uint64_t lastState;
     public:
         Board(int size);
-        ~Board();
+        ~Board() = default;
 
         Tile* operator()(int row, int col);
         int getSize() const { return size; }
+
+        uint64_t getLastState() const {return lastState; }
 
         MoveResult attemptMove(Colour, int row, int col);
 

@@ -13,6 +13,7 @@
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <iostream>
+#include <thread>
 
 static const float CAMERA_SPEED = 50.0f;
 
@@ -226,3 +227,35 @@ std::unique_ptr<Scene> Renderer::setScene(std::unique_ptr<Scene> newScene) {
     return oldScene;
 }
 
+void Renderer::mainLoop(std::unique_ptr<LogicInterface> interface) {
+    const double maxFPS = 144.0;
+    const double frameTime = 1.0 / maxFPS;
+
+    render();
+    update();
+
+    while(!shouldClose()) {
+        bool active = glfwGetWindowAttrib(window, GLFW_FOCUSED) &&
+            !glfwGetWindowAttrib(window, GLFW_ICONIFIED);
+
+        if (!active) {
+            // Block until some event happens to stay responsive
+            glfwWaitEvents();
+            continue; // skip rendering while inactive
+        }
+
+        double start = glfwGetTime();
+
+        clear();
+        render();
+        update();
+
+        interface->update();
+
+        double end = glfwGetTime();
+        double delta = end - start;
+        if (delta < frameTime) {
+            std::this_thread::sleep_for(std::chrono::duration<double>(frameTime - delta));
+        }
+    }
+}
