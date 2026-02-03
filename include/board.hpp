@@ -19,6 +19,8 @@ class Board {
         void commitMove(Group* g, Tile* t);
         bool checkKo(Colour c);
 
+        Colour currentTurn = Colour::BLACK;
+
         uint64_t lastState;
     public:
         Board(int size);
@@ -29,7 +31,7 @@ class Board {
 
         uint64_t getLastState() const {return lastState; }
 
-        MoveResult attemptMove(Colour, int row, int col);
+        MoveResult attemptMove(int row, int col);
 
         Group* addGroup(std::unique_ptr<Group> g);
         void removeGroup(Group* g);

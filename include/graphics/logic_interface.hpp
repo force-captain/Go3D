@@ -3,6 +3,7 @@
 #include "types.hpp"
 #include <glm/fwd.hpp>
 #include <memory>
+#include <optional>
 #include <vector>
 #include <stdint.h>
 
@@ -10,6 +11,12 @@ struct BoardMetrics {
     float square_size;
     float stone_size;
     float init_height;
+    float board_top_y;
+};
+
+struct MoveCommand {
+    int x;
+    int y;
 };
 
 class Scene;
@@ -24,11 +31,21 @@ class LogicInterface {
 
         void update();
 
+        void pushMove(MoveCommand move);
+
+        std::pair<int, int> worldToBoard(glm::vec3 world);
+
     private:
         uint64_t last_state = 0;
         std::shared_ptr<Mesh> stoneMesh;
         std::shared_ptr<Material> stoneMat_W;
         std::shared_ptr<Material> stoneMat_B;
+
+        std::optional<MoveCommand> pendingMove;
+
+        void sync3DBoard();
+        bool boardChanged() const;
+        void updateBoard();
 
         glm::vec3 getPosition(int x, int y);
 

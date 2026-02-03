@@ -13,6 +13,10 @@ class Ray {
             : origin(o), direction(glm::normalize(dir)) {}
 
         Ray transform(const glm::mat4& mat) const;
+
+        const glm::vec3& getOrigin() const { return origin; }
+        const glm::vec3& getDirection() const { return direction; }
+
         glm::vec3 at(float t) const { return origin + direction * t; }
         
         bool intersects(const glm::vec3& v0, const glm::vec3& v1, const glm::vec3& v2, float t);

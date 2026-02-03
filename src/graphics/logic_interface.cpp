@@ -4,6 +4,7 @@
 #include "graphics/scene.hpp"
 #include "tile.hpp"
 #include "types.hpp"
+#include <iostream>
 #include <memory>
 #include <glm/glm.hpp>
 #include <stdexcept>
@@ -23,6 +24,7 @@ LogicInterface::LogicInterface(Scene& scene, Board& board, size_t board_size, st
         default:
             throw std::invalid_argument("Incorrect board size");
     }
+    metrics.board_top_y = 0.25f;
     stoneMesh = std::make_shared<Mesh>("assets/stone.obj");
     stoneMat_W = std::make_shared<Material>(glm::vec3(0.5f), 0, shader);
     stoneMat_B = std::make_shared<Material>(glm::vec3(0.1f), 0, shader);
@@ -36,6 +38,7 @@ glm::vec3 LogicInterface::getPosition(int x, int y) {
             (y - centre) * metrics.square_size);
 }
 
+// Adds a stone at the specified location
 std::unique_ptr<Object3D> LogicInterface::createStone(Colour clr, int x, int y) {
     std::unique_ptr<Object3D> stone = std::make_unique<Object3D>(stoneMesh);
     stone->setMaterial(clr == Colour::WHITE ? stoneMat_W : stoneMat_B);
@@ -44,10 +47,11 @@ std::unique_ptr<Object3D> LogicInterface::createStone(Colour clr, int x, int y) 
     return stone;
 }
 
+bool LogicInterface::boardChanged() const {
+    return last_state == 0 || board.getLastState() != last_state;
+}
 
-void LogicInterface::update() { 
-    if (last_state != 0 && board.getLastState() == last_state) return;
-
+void LogicInterface::sync3DBoard() {
     last_state = board.getLastState();
 
     for(size_t i = 0; i < board_size; i++) {
@@ -62,4 +66,38 @@ void LogicInterface::update() {
             }
         }
     }
+}
+
+void LogicInterface::updateBoard() {
+    // TODO: Feedback to user when MoveResult != OK
+    if (pendingMove.has_value()) {
+        MoveResult result = board.attemptMove(pendingMove->x, pendingMove->y);
+        pendingMove.reset();
+    }
+}
+
+// Checks the logical board, and creates/removes stones to make the 3D board match this state.
+void LogicInterface::update() { 
+    updateBoard();
+    if (boardChanged()) {
+        sync3DBoard();
+    }
+}
+
+void LogicInterface::pushMove(MoveCommand move) {
+    if (pendingMove.has_value()) {
+        std::cout << "Extra move ignored.\n";
+        return;
+    }
+    pendingMove.emplace(move);
+}
+
+std::pair<int, int> LogicInterface::worldToBoard(glm::vec3 world) {
+    float halfL = (board_size * metrics.square_size) / 2.0f;
+    int bx = int(std::floor((world.x + halfL) / metrics.square_size));
+    int by = int(std::floor((world.z + halfL) / metrics.square_size));
+    
+    return std::pair(
+            glm::clamp(bx, 0, (int)board_size - 1),
+            glm::clamp(by, 0, (int)board_size - 1));
 }

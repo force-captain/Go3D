@@ -88,14 +88,17 @@ void Board::commitMove(Group* newGroup, Tile* t) {
     for (Tile* t : newLiberties) {
         newGroup->addLiberty(t);
     }
+
+    // Change turn
+    currentTurn = (currentTurn == Colour::BLACK) ? Colour::WHITE : Colour::BLACK;
 }
 
 
-MoveResult Board::attemptMove(Colour colour, int row, int col) {
+MoveResult Board::attemptMove(int row, int col) {
     Tile* t = (*this)(row, col);
     
     // Get new group
-    Group* newGroup = initiateMove(colour, t);
+    Group* newGroup = initiateMove(currentTurn, t);
 
     if (newGroup == nullptr) return MoveResult::INVALID;
 
@@ -115,7 +118,7 @@ MoveResult Board::attemptMove(Colour colour, int row, int col) {
         
         ng->removeLiberty(t);
             
-        if (ng->getColour() != colour) {
+        if (ng->getColour() != currentTurn) {
             neighbourOpponents.insert(ng);
             if (ng->getLibertyCount() == 0) {
                 ng->markForCapture(true);
@@ -127,7 +130,7 @@ MoveResult Board::attemptMove(Colour colour, int row, int col) {
         }
     }
 
-    if (current_liberties == 0 || checkKo(colour)) {
+    if (current_liberties == 0 || checkKo(currentTurn)) {
         for(Group* ng : neighbourOpponents) {
             ng->markForCapture(false);
             ng->addLiberty(t);

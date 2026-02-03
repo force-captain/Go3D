@@ -84,7 +84,6 @@ int main(int argc, char *argv[]) {
     
     // Logic setup
     Board board(boardsize);
-    board.attemptMove(Colour::BLACK, 2, 2);
 
     // 3D setup
     if (!renderer.init()) return -1;

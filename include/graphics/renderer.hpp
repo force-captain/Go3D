@@ -16,6 +16,8 @@ class Object2D;
 class Camera;
 class Scene;
 
+// Board Y top: 0.25
+
 class Renderer {
     private:
         static std::shared_ptr<Shader> getDefaultShader();
@@ -41,6 +43,8 @@ class Renderer {
         void renderObject(Object3D& obj, const Camera& cam);
         void renderObject(Object2D& obj);
         void renderScene();
+
+        glm::vec3 mouseToWorld() const;
 
     public:
         Renderer(int width, int height, const char* title)

@@ -5,11 +5,13 @@
 #include "graphics/camera.hpp"
 #include "graphics/light.hpp"
 #include "graphics/scene.hpp"
+#include "graphics/ray.hpp"
 #include "graphics/objects/shader.hpp"
 #include <GL/glu.h>
 #include <GLFW/glfw3.h>
 #include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_double4x4.hpp>
+#include <glm/ext/quaternion_geometric.hpp>
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <iostream>
@@ -250,6 +252,10 @@ void Renderer::mainLoop(std::unique_ptr<LogicInterface> interface) {
         render();
         update();
 
+        glm::vec3 boardHit = mouseToWorld();
+        std::cout << boardHit.x << ", " << boardHit.z << "\n";
+
+
         interface->update();
 
         double end = glfwGetTime();
@@ -258,4 +264,33 @@ void Renderer::mainLoop(std::unique_ptr<LogicInterface> interface) {
             std::this_thread::sleep_for(std::chrono::duration<double>(frameTime - delta));
         }
     }
+}
+
+glm::vec3 Renderer::mouseToWorld() const {
+    // TODO: express in a way other than hardcoding
+    float boardY = 0.25f;
+
+    double mx = input.getMouseX();
+    double my = input.getMouseY();
+    float nx = (2.0f * mx) / width - 1.0f;
+    float ny = 1.0f - (2.0f * my) / height;
+
+    glm::vec4 clipCoords(nx, ny, -1.0f, 1.0f);
+
+    const Camera& cam = scene->getCamera();
+
+    glm::mat4 invProj = glm::inverse(cam.getProjectionMatrix());
+    glm::vec4 eyeCoords = invProj * clipCoords;
+    eyeCoords.z = -1.0f;
+    eyeCoords.w = 0.0f;
+
+    glm::mat4 invView = glm::inverse(cam.getViewMatrix());
+    glm::vec4 worldDir = invView * eyeCoords;
+    glm::vec3 rayDir = glm::normalize(glm::vec3(worldDir));
+    glm::vec3 rayOrig = cam.getPosition();
+
+    Ray ray(rayOrig, rayDir);
+
+    float t = (boardY - ray.getOrigin().y) / ray.getDirection().y;
+    return ray.at(t);
 }
