@@ -9,6 +9,7 @@ void Input::update(GLFWwindow* window) {
 
     // Mouse 
     for (int i = 0; i < MAX_BUTTONS; i++) {
+        prevButtons[i] = buttons[i];
         bool pressed = glfwGetMouseButton(window, i) == GLFW_PRESS;
         buttons[i] = pressed;
 
@@ -40,4 +41,9 @@ bool Input::isKeyPressed(int key) const {
 bool Input::isButtonPressed(int button) const {
     return (button < 0 || button >= MAX_BUTTONS) ? false
         : buttons[button];
+}
+
+bool Input::wasButtonClicked(int button) const {
+    return (button < 0 || button >= MAX_BUTTONS) ? false
+        : (buttons[button] && !prevButtons[button]);
 }

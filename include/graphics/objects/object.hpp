@@ -15,6 +15,7 @@ class Object {
         std::function<void()> onHover;
         std::function<void()> onUnhover;
         std::function<void(float)> onUpdate;
+        bool visible = true;
         void initBounds();
     public:
         virtual ~Object() = default;
@@ -29,6 +30,9 @@ class Object {
         
         void setMaterial(const std::shared_ptr<Material>& newMat) {mat = newMat; }
         const std::shared_ptr<Material>& getMaterial() const { return mat; }
+
+        bool isVisible() const { return visible; }
+        void setVisible(bool v) { visible = v; }
 
         void triggerClick() { if (onClick) onClick(); }
         void triggerHover() { if (onHover) onHover(); }

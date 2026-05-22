@@ -1,8 +1,14 @@
 #include "group.hpp"
 
-Group::Group(Tile& init, Colour colour) 
+Group::Group(Tile& init, Colour colour)
     : colour(colour), captured(false) {
         points.insert(&init);
+        // The founding stone belongs to this group immediately: mark its tile so
+        // the placed stone registers on the board (and in the Zobrist position
+        // hash) before any neighbouring groups are merged in. Without this a lone
+        // stone never marks its tile, so attemptMove's checkKo sees an unchanged
+        // position and rejects every move.
+        init.setGroup(*this);
 }
 
 

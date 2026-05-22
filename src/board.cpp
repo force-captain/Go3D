@@ -59,14 +59,18 @@ bool Board::checkKo(Colour c) {
 }
 
 void Board::commitMove(Group* newGroup, Tile* t) {
-    // Clear captured groups
-    for(const auto& g : groups) {
-        if (g->isCaptured()) {
-            for (Tile* t : g->getPoints()) {
-                t->clearGroup();
-            }
-            removeGroup(g.get());
+    // Clear captured groups. Collect them first: removeGroup() erases from the
+    // `groups` set, so erasing inline invalidates the iterator this loop walks
+    // (the SIGSEGV seen on the first capture).
+    std::vector<Group*> capturedGroups;
+    for (const auto& g : groups) {
+        if (g->isCaptured()) capturedGroups.push_back(g.get());
+    }
+    for (Group* g : capturedGroups) {
+        for (Tile* pt : g->getPoints()) {
+            pt->clearGroup();
         }
+        removeGroup(g);
     }
 
     // Merge neighbours

@@ -1,4 +1,5 @@
 #include "graphics/renderer.hpp"
+#include "graphics/logic_interface.hpp"
 #include "graphics/objects/object3d.hpp"
 #include "graphics/objects/object2d.hpp"
 #include "graphics/objects/mesh.hpp"
@@ -15,6 +16,7 @@
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <iostream>
+#include <optional>
 #include <thread>
 
 static const float CAMERA_SPEED = 50.0f;
@@ -134,7 +136,7 @@ void Renderer::renderObject(Object2D& obj) {
 
 void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     glm::mat4 view = cam.getViewMatrix();
-    glm::mat4 proj = cam.getProjectionMatrix();
+    glm::mat4 proj = cam.getProjectionMatrix(width, height);
 
     auto shader = obj.getMaterial()->shader;
     if (!shader) return;
@@ -176,14 +178,16 @@ void Renderer::renderObject(Object3D& obj, const Camera& cam) {
     }
 
     // Drawing
+    if (obj.isWireframe()) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
     glBindVertexArray(obj.getMesh()->getVAO());
-    if (obj.getMesh()->getEBO() != 0) 
+    if (obj.getMesh()->getEBO() != 0)
         glDrawElements(GL_TRIANGLES, obj.getMesh()->indexCount(), GL_UNSIGNED_INT, 0);
-    else 
+    else
         glDrawArrays(GL_TRIANGLES, 0, obj.getMesh()->vertexCount());
 
     // Unbind
     glBindVertexArray(0);
+    if (obj.isWireframe()) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if (obj.getMaterial()->textureID != 0) 
         glBindTexture(GL_TEXTURE_2D, 0);
 }
@@ -201,13 +205,15 @@ void Renderer::set3Dmode(bool is3D) {
 void Renderer::renderScene() {
     // Render 3D objects
     for (const auto& [id, obj]: scene->getObjects()) {
-        if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get())) 
+        if (!obj->isVisible()) continue;
+        if (Object3D* o3_ptr = dynamic_cast<Object3D*>(obj.get()))
             renderObject(*o3_ptr, scene->getCamera());
     }
 
     // Render 2D objects
     set3Dmode(false);
     for (const auto& [id, obj]: scene->getObjects()) {
+        if (!obj->isVisible()) continue;
         if (Object2D* o2_ptr = dynamic_cast<Object2D*>(obj.get()))
             renderObject(*o2_ptr);
     }
@@ -252,11 +258,8 @@ void Renderer::mainLoop(std::unique_ptr<LogicInterface> interface) {
         render();
         update();
 
-        glm::vec3 boardHit = mouseToWorld();
-        std::cout << boardHit.x << ", " << boardHit.z << "\n";
-
-
-        interface->update();
+        handleBoardInteraction(*interface);
+        interface->update(deltaTime);
 
         double end = glfwGetTime();
         double delta = end - start;
@@ -266,31 +269,50 @@ void Renderer::mainLoop(std::unique_ptr<LogicInterface> interface) {
     }
 }
 
-glm::vec3 Renderer::mouseToWorld() const {
-    // TODO: express in a way other than hardcoding
-    float boardY = 0.25f;
+void Renderer::handleBoardInteraction(LogicInterface& interface) {
+    std::optional<glm::vec3> hit = mouseToWorld(interface.getMetrics());
 
-    double mx = input.getMouseX();
-    double my = input.getMouseY();
-    float nx = (2.0f * mx) / width - 1.0f;
-    float ny = 1.0f - (2.0f * my) / height;
+    // Left-click commits a stone at the pointed-to intersection.
+    if (hit.has_value() && input.wasButtonClicked(GLFW_MOUSE_BUTTON_LEFT)) {
+        auto [col, row] = interface.worldToBoard(hit.value());
+        interface.place(glm::ivec2(col, row), interface.getCurrentTurn());
+    }
 
-    glm::vec4 clipCoords(nx, ny, -1.0f, 1.0f);
+    // Hover cue follows the cursor; hidden off-board or over an occupied point.
+    if (hit.has_value()) interface.showHover(hit.value());
+    else interface.hideHover();
+}
 
-    const Camera& cam = scene->getCamera();
+std::optional<glm::vec3> Renderer::mouseToWorld(const BoardMetrics& metrics) const {
+    int winW, winH, fbW, fbH;
+    glfwGetWindowSize(window, &winW, &winH);
+    glfwGetFramebufferSize(window, &fbW, &fbH);
+    if (winW == 0 || winH == 0) return std::nullopt;
 
-    glm::mat4 invProj = glm::inverse(cam.getProjectionMatrix());
-    glm::vec4 eyeCoords = invProj * clipCoords;
-    eyeCoords.z = -1.0f;
-    eyeCoords.w = 0.0f;
+    // The cursor is reported in window coords (top-left origin, +Y down), but
+    // unProject works in framebuffer pixels with a bottom-left origin: rescale
+    // for HiDPI, then flip Y.
+    double px = input.getMouseX() * (double(fbW) / winW);
+    double py = fbH - input.getMouseY() * (double(fbH) / winH);
 
-    glm::mat4 invView = glm::inverse(cam.getViewMatrix());
-    glm::vec4 worldDir = invView * eyeCoords;
-    glm::vec3 rayDir = glm::normalize(glm::vec3(worldDir));
-    glm::vec3 rayOrig = cam.getPosition();
+    Ray ray = scene->getCamera().screenPoint(px, py, fbW, fbH);
 
-    Ray ray(rayOrig, rayDir);
+    if (std::abs(ray.getDirection().y) < 1e-6f) {
+        return std::nullopt;
+    }
 
-    float t = (boardY - ray.getOrigin().y) / ray.getDirection().y;
-    return ray.at(t);
+    float t = (metrics.board_top_y - ray.getOrigin().y) / ray.getDirection().y;
+    if (t < 0.0f) {
+        return std::nullopt;
+    }
+
+    glm::vec3 hit = ray.at(t);
+
+    // Reject hits outside the board's top face (spans [-half, half] in x and z).
+    if (std::abs(hit.x) > metrics.board_half_world ||
+        std::abs(hit.z) > metrics.board_half_world) {
+        return std::nullopt;
+    }
+
+    return hit;
 }

@@ -1,3 +1,4 @@
 build/*
 *.xcf
 .cache
+CLAUDE.md

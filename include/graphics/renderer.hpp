@@ -4,6 +4,7 @@
 #include <glm/glm.hpp>
 #include <memory>
 #include <glm/gtc/matrix_transform.hpp>
+#include <optional>
 #include "graphics/input.hpp"
 #include "graphics/logic_interface.hpp"
 
@@ -44,7 +45,14 @@ class Renderer {
         void renderObject(Object2D& obj);
         void renderScene();
 
-        glm::vec3 mouseToWorld() const;
+        // Ray-casts the cursor onto the board's top face. Returns the world-space
+        // hit point, or nullopt when the cursor is not over the board. Converting
+        // that point to a board coordinate is LogicInterface's job (worldToBoard).
+        std::optional<glm::vec3> mouseToWorld(const BoardMetrics& metrics) const;
+
+        // Per-frame board pointer handling: updates the hover cue, and on a
+        // left-click routes the move into the game logic via LogicInterface.
+        void handleBoardInteraction(LogicInterface& interface);
 
     public:
         Renderer(int width, int height, const char* title)

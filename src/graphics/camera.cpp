@@ -1,12 +1,13 @@
 #include "graphics/camera.hpp"
 #include <cmath>
 #include <glm/ext/matrix_clip_space.hpp>
+#include <glm/ext/matrix_projection.hpp>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/glm.hpp>
 #include "graphics/ray.hpp"
 
-Camera::Camera(glm::vec3 target, float distance, float yaw, float pitch, float fov, float aspect, float nearClip, float farClip)
-    : target(target), distance(distance), yaw(yaw), pitch(pitch), fov(fov), aspect(aspect), nearClip(nearClip), farClip(farClip) {}
+Camera::Camera(glm::vec3 target, float distance, float yaw, float pitch, float fov, float nearClip, float farClip)
+    : target(target), distance(distance), yaw(yaw), pitch(pitch), fov(fov), nearClip(nearClip), farClip(farClip) {}
 
 
 glm::mat4 Camera::getViewMatrix() const {
@@ -14,6 +15,7 @@ glm::mat4 Camera::getViewMatrix() const {
 }
 
 glm::mat4 Camera::getProjectionMatrix(float width, float height) const {
+    float aspect = static_cast<float>(width) / static_cast<float>(height);
     return glm::perspective(glm::radians(fov), aspect, nearClip, farClip);
 }
 
@@ -38,20 +40,15 @@ void Camera::lookAt(const glm::vec3& point) {
 }
 
 Ray Camera::screenPoint(double mx, double my, float width, float height) const {
-    // Clip space
-    float x = (2.0f * mx) / width - 1.0f;
-    float y = 1.0f - (2.0f * my) / height;
-    glm::vec4 clip(x, y, -1.0f, 1.0f);
-    
-    // Eye space
-    glm::vec4 eye = glm::inverse(getProjectionMatrix()) * clip;
-    eye.z = -1.0f;
-    eye.w = 0.0f;
+    glm::mat4 view = getViewMatrix();
+    glm::mat4 proj = getProjectionMatrix(width, height);
+    glm::vec4 viewport(0,0,width,height);
 
-    // World space
-    glm::vec4 world4 = glm::inverse(getViewMatrix()) * eye;
-    glm::vec3 world = glm::normalize(glm::vec3(world4));
+    glm::vec3 nearWorld = glm::unProject(glm::vec3(mx, my, 0.0f), view, proj, viewport);
+    glm::vec3 farWorld  = glm::unProject(glm::vec3(mx, my, 1.0f), view, proj, viewport);
+
+    glm::vec3 dir = glm::normalize(farWorld - getPosition());
 
     // Ray
-    return Ray(getPosition(), world);
+    return Ray(getPosition(), dir);
 }

@@ -29,6 +29,8 @@ class Board {
         Tile* operator()(int row, int col);
         int getSize() const { return size; }
 
+        Colour getCurrentTurn() const { return currentTurn; }
+
         uint64_t getLastState() const {return lastState; }
 
         MoveResult attemptMove(int row, int col);

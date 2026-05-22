@@ -9,6 +9,7 @@ class Input {
 
         static const int MAX_BUTTONS = 8;
         bool buttons[MAX_BUTTONS] = {false};
+        bool prevButtons[MAX_BUTTONS] = {false};
 
         double dragDX[MAX_BUTTONS] = {0};
         double dragDY[MAX_BUTTONS] = {0};
@@ -23,6 +24,8 @@ class Input {
         bool isKeyPressed(int key) const;
 
         bool isButtonPressed(int button) const;
+        // True only on the frame the button transitions from up to down.
+        bool wasButtonClicked(int button) const;
         double getMouseX() const { return mouseX; }
         double getMouseY() const { return mouseY; }
 

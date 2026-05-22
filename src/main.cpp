@@ -9,6 +9,7 @@
 #include "types.hpp"
 #include <GLFW/glfw3.h>
 #include <array>
+#include <glm/fwd.hpp>
 #include <glm/trigonometric.hpp>
 #include <memory>
 #include <string>
@@ -65,11 +66,10 @@ std::unique_ptr<Scene> initScene(std::string boardsize, std::shared_ptr<Shader> 
 
     //scene->addObject(std::move(sizeButton));
 
-    std::unique_ptr<Camera> cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0f, 45.0f, 800.0f / 600.0f);
+    std::unique_ptr<Camera> cam = std::make_unique<Camera>(glm::vec3(0.0f, 0.0f, 0.0f), 10.0f, 0.0f, 0.0f, 45.0f, 0.1f, 100.0f);
 
     cam->rotate(glm::radians(20.0f), glm::radians(35.0f));
 
-    Camera* rcam = cam.get();
     
     scene->setCamera(std::move(cam));
     return scene;
